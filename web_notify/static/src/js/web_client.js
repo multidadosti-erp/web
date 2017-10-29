@@ -3,6 +3,8 @@ odoo.define('web_notify.WebClient', function (require) {
 
 var WebClient = require('web.WebClient');
 var base_bus = require('bus.bus');
+var session = require('web.session');
+
 
 WebClient.include({
     init: function(parent, client_options){
@@ -13,14 +15,9 @@ WebClient.include({
         this.start_polling();
         return res
     },
-    on_logout: function() {
-        var self = this;
-        base_bus.bus.off('notification', this, this.bus_notification);
-        this._super();
-    },
     start_polling: function() {
-        this.channel_warning = 'notify_warning_' + this.session.uid;
-        this.channel_info = 'notify_info_' + this.session.uid;
+        this.channel_warning = 'notify_warning_' + session.uid;
+        this.channel_info = 'notify_info_' + session.uid;
         base_bus.bus.add_channel(this.channel_warning);
         base_bus.bus.add_channel(this.channel_info);
         base_bus.bus.on('notification', this, this.bus_notification);
@@ -33,7 +30,7 @@ WebClient.include({
             var message = notification[1];
             if (channel === self.channel_warning) {
                 self.on_message_warning(message);
-            } else if (channel == self.channel_info) {
+            } else if (channel === self.channel_info) {
                 self.on_message_info(message);
             }
         });
