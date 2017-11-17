@@ -22,7 +22,7 @@ class WebFavicon(http.Controller):
         favicon = company.favicon_backend
         favicon_mimetype = company.favicon_backend_mimetype
         if not favicon:
-            favicon = file_open('web/static/src/img/favicon.ico')
+            favicon = file_open('web/static/src/img/favicon.ico', 'rb')
             favicon_mimetype = 'image/x-icon'
         else:
             favicon = BytesIO(base64.b64decode(favicon))
