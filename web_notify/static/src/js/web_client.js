@@ -7,9 +7,6 @@ var session = require('web.session');
 
 
 WebClient.include({
-    init: function(parent, client_options){
-        this._super(parent, client_options);
-    },
     show_application: function() {
         var res = this._super();
         this.start_polling();
