@@ -17,5 +17,6 @@
         "python": ['mpld3'],
     },
     "auto_install": False,
+    'installable': False,
     "license": "LGPL-3",
 }
