@@ -33,7 +33,7 @@ odoo.define('web_widget_open_tab.FieldOpenTab', function(require) {
         _renderReadonly: function () {
             var $content = $("<a/>", {
                 "href": this._getReference(),
-                "class": "open_tab_widget fa fa-eye",
+                "class": "open_tab_widget fa fa-window-restore",
             });
             var self = this;
             $content.tooltip({
