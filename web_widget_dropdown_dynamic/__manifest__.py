@@ -15,6 +15,7 @@
         'web',
     ],
     'data': [
+        'security/ir.model.access.csv',
         'templates/assets.xml',
     ],
     'installable': True,
