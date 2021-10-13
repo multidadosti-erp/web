@@ -20,6 +20,6 @@
     'qweb': [
         'static/src/xml/one2many_product_picker.xml',
     ],
-    'installable': True,
+    'installable': False,
     'auto_install': False,
 }

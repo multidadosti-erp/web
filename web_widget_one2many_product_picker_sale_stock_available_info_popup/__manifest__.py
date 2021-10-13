@@ -14,6 +14,6 @@
         "sale_stock_available_info_popup"
     ],
     "data": ["templates/assets.xml"],
-    "installable": True,
+    "installable": False,
     "auto_install": False,
 }
