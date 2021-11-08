@@ -21,10 +21,11 @@ class WebWidgetDropdownDynamic(models.Model):
 
     @api.model
     def values_int_field(self):
-        min_value = int(self.env.context.get('min'))
-        max_value = int(self.env.context.get('max'))
+        min_value = int(self.env.context.get('min', 0))
+        max_value = int(self.env.context.get('max', 100))
+        step_value = int(self.env.context.get('step', 1))
         options = []
-        for value in range(min_value, max_value + 1):
+        for value in range(min_value, max_value + 1, step_value):
             options.append((value, str(value)))
         return options
 
