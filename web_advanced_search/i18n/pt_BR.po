@@ -25,21 +25,21 @@ msgstr ""
 #: code:addons/web_advanced_search/static/src/xml/web_advanced_search.xml:8
 #, python-format
 msgid "Add Advanced Filter"
-msgstr "Adicionar filtro avançado"
+msgstr "Adicionar Filtro Avançado"
 
 #. module: web_advanced_search
 #. openerp-web
 #: code:addons/web_advanced_search/static/src/js/web_advanced_search.js:176
 #, python-format
 msgid "is child of"
-msgstr ""
+msgstr "é filho de"
 
 #. module: web_advanced_search
 #. openerp-web
 #: code:addons/web_advanced_search/static/src/js/web_advanced_search.js:177
 #, python-format
 msgid "is parent of"
-msgstr ""
+msgstr "é pai de"
 
 #~ msgid "is in selection"
 #~ msgstr "Está em seleção"
