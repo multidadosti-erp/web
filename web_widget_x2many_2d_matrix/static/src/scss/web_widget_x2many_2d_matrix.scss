@@ -12,7 +12,7 @@ $x2many_2d_matrix_max_height: 450px;
             position: sticky;
             top: 0;
             z-index: 1;
-            background-color: $o-list-footer-bg-color;
+            background-color: $o-brand-lightsecondary;
 
             &.total {
                 right: 0;
@@ -55,7 +55,7 @@ $x2many_2d_matrix_max_height: 450px;
         > tfoot > tr > td {
             padding: 0.75rem;
             text-align: left;
-            background-color: $o-list-footer-bg-color;
+            background-color: $o-brand-lightsecondary;
             position: sticky;
             bottom: 0;
 
