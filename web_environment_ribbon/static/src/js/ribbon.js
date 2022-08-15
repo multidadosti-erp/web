@@ -47,12 +47,20 @@ odoo.define('web_environment_ribbon.ribbon', function(require) {
                 // Ribbon name
                 if (ribbon_data.name && ribbon_data.name !== 'False') {
                     ribbon.html(ribbon_data.name);
+                    if (ribbon.hasClass("hidden")) {
+                        ribbon.removeClass("hidden").addClass("visible");
+
+                    } else {
+                        ribbon.removeClass("visible").addClass("hidden");
+                    }
                     ribbon.show();
                 }
+
                 // Ribbon color
                 if (ribbon_data.color && validStrColour(ribbon_data.color)) {
                     ribbon.css('color', ribbon_data.color);
                 }
+
                 // Ribbon background color
                 if (ribbon_data.background_color && validStrColour(ribbon_data.background_color)) {
                     ribbon.css('background-color', ribbon_data.background_color);
