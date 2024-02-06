@@ -3,11 +3,11 @@
 
 {
     "name": "Web One2many Kanban",
-    "version": "12.0.1.0.1",
+    "version": "12.0.1.0.2",
     "license": "AGPL-3",
     "sequence": 6,
-    "author": "Serpent Consulting Services Pvt. Ltd.",
-    "maintainer": "Serpent Consulting Services Pvt. Ltd.",
+    "author": "OCA/Serpent Consulting Services Pvt. Ltd.",
+    "maintainer": "OCA",
     "website": "http://www.serpentcs.com",
     "summary": 'Display one2many widget as kanban',
     "description": """
