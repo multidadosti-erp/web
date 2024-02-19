@@ -14,14 +14,16 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
             _.each(this.fieldsInfo, function (field_info, field_nm) {
                 if (field_info.mode === 'list' || field_info.mode === 'kanban')
                 {
-                    o2x_field_names.push(field_nm);
+                    o2x_field_names.push({name: field_nm, options: field_info.options});
                 }
             });
             if ( o2x_field_names.length > 0) {
                 var o2x_records = [];
                 _.each(o2x_field_names, function (o2x_field_name) {
-                    var record = self.qweb_context.record[o2x_field_name];
+                    var record = self.qweb_context.record[o2x_field_name.name];
                     if (record.type === 'one2many') {
+                        // Adiciona opções do campo determinadas no XML
+                        record.options = o2x_field_name.options;
                         o2x_records.push(record);
                     }
                 });
