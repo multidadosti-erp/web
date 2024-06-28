@@ -67,7 +67,7 @@ odoo.define('web_widget_timepicker', function (require) {
             this.datepickerOptions = _.extend(this.datepickerOptions, {
                 format: this.floatTimeFormat,
                 defaultDate: defDate && defDate.isValid()
-                    ? defDate : new moment(),
+                    ? defDate : new moment(this._formatValue('0'), this.floatTimeFormat),
             });
         },
 
