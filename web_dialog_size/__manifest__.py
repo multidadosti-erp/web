@@ -19,6 +19,7 @@
     'license': 'AGPL-3',
     'depends': [
         'web',
+        'base_fontawesome',
     ],
     'qweb': [
         'static/src/xml/web_dialog_size.xml',

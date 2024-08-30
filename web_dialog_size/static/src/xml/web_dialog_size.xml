@@ -2,11 +2,11 @@
 <templates id="template" xml:space="preserve">
     <t t-extend="Dialog">
         <t t-jquery="button.close" t-operation="inner">
-            <i class="fa fa-close" />
+            <i class="far fa-window-close"/>
         </t>
         <t t-jquery="button.close" t-operation="before">
-            <button type="button" class="dialog_button_extend close"><i class="fa fa-expand" /></button>
-            <button type="button" class="dialog_button_restore close"><i class="fa fa-compress" /></button>
+            <button type="button" class="dialog_button_extend close"><i class="far fa-window-maximize"/></button>
+            <button type="button" class="dialog_button_restore close"><i class="far fa-window-restore"/></button>
         </t>
     </t>
 </templates>
