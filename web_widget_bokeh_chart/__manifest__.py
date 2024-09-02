@@ -18,6 +18,7 @@
     "external_dependencies": {
         "python": ['bokeh'],
     },
-    "auto_install": False,
+    'installable': False,
+    'auto_install': False,
     "license": "LGPL-3",
 }
