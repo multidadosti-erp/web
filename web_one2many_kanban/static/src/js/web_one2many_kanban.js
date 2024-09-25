@@ -45,6 +45,9 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
                 self._replaceElement(self.qweb.render('kanban-box',
                     self.qweb_context));
                 self.$el.addClass('o_kanban_record').attr("tabindex", 0);
+                if (!self.group_readonly) {
+                    self.$el.addClass('draggable');
+                }
                 self.$el.attr('role', 'article');
                 self.$el.data('record', self);
                 if (self.$el.hasClass('oe_kanban_global_click') ||
