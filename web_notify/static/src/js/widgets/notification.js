@@ -7,7 +7,9 @@ odoo.define('web_notify.Notification', function (require) {
         icon_mapping: {
             'success': 'fa-thumbs-up',
             'danger': 'fa-exclamation-triangle',
+            'error': 'fa-exclamation-triangle',
             'warning': 'fa-exclamation',
+            'warn': 'fa-exclamation',
             'info': 'fa-info',
             'default': 'fa-lightbulb-o',
         },
