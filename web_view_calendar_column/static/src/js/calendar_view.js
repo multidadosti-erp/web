@@ -6,11 +6,11 @@ odoo.define('web_view_calendar_column.CalendarView', function (require) {
     CalendarView.include({
         jsLibs: [
             '/web/static/lib/fullcalendar/js/fullcalendar.js',
-            '/web_view_calendar_column/static/lib/scheduler.min.js'
+            '/web_view_calendar_column/static/lib/scheduler.js'
         ],
         cssLibs: [
             '/web/static/lib/fullcalendar/css/fullcalendar.css',
-            '/web_view_calendar_column/static/lib/scheduler.min.css'
+            '/web_view_calendar_column/static/lib/scheduler.css'
         ],
         init: function (viewInfo, params) {
             this._super.apply(this, arguments);
