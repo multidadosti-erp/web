@@ -9,85 +9,82 @@ odoo.define('web_group_by_percentage', function (require) {
 
     ListRenderer.include({
         /**
-         * Render the percentage to the group row.
+         * Renderiza a porcentagem na linha do grupo.
          *
          * @override
+         * @param {Object} group - O grupo de dados a ser renderizado.
+         * @returns {jQuery} - A linha do grupo renderizada.
          */
         _renderGroupRow: function (group) {
             var self = this;
             var res = this._super.apply(this, arguments);
             _.each(group.aggregatePercentages, function (percentage, field) {
                 var cellIndex = _.findIndex(self.columns, function (column) {
-                    if (field === column.attrs.name) {
-                        return true;
-                    }
+                    return field === column.attrs.name;
                 });
 
-                var $cell = $(res.find('td').get(cellIndex - 1));
-                var $b = $('<span>')
-                    .addClass('web_group_by_percentage')
-                    .html(_.str.sprintf('%s%% ', percentage.toFixed(2)))
-                    .data('percentage', percentage);
-                $cell.prepend($b);
-            });
+                if (cellIndex !== -1) {
+                    var $cell = $(res.find('td').get(cellIndex - 1));
+                    if ($cell.length) {
+                        var $b = $('<span>', {
+                            class: 'web_group_by_percentage',
+                            html: _.str.sprintf(' (%s%%)', percentage.toFixed(2)),
+                            'data-percentage': percentage
+                        });
+                        $cell.append($b);
+                    }
+                }});
             return res;
         },
     });
 
     BasicModel.include({
         /**
-         * Adds aggregatePercentages to the result.
+         * Adiciona aggregatePercentages ao resultado.
          *
          * @override
+         * @returns {Object} - O resultado com aggregatePercentages adicionados.
          */
         get: function () {
-            var result = this._super.apply(this, arguments),
-                dp = result && this.localData[result.id];
-            if (dp) {
-                if (dp.aggregatePercentages) {
-                    result.aggregatePercentages = $.extend({}, dp.aggregatePercentages);
-                }
+            var result = this._super.apply(this, arguments);
+            if (result && result.id && this.localData[result.id] && this.localData[result.id].aggregatePercentages) {
+                result.aggregatePercentages = this.localData[result.id].aggregatePercentages;
             }
             return result;
         },
         
         /**
-         * Calculate percentages.
+         * Calcula as porcentagens.
          *
          * @override
+         * @returns {Deferred} - A promessa que representa a leitura do grupo.
          */
         _readGroup: function () {
             var self = this,
                 res = this._super.apply(this, arguments);
+
             res.done(function (list) {
-                // Calculate totals
-                var sums = {};
-                _.each(list.data, function (groupId) {
+                // Calcula os totais
+                var sums = _.reduce(list.data, function (acc, groupId) {
                     var group = self.get(groupId);
                     _.each(group.aggregateValues, function (value, field) {
-                        if (!(field in sums)) {
-                            sums[field] = 0;
-                        }
-                        sums[field] += value;
+                        acc[field] = (acc[field] || 0) + value;
                     });
-                });
+                    return acc;
+                }, {});
 
-                // Calculate percentages
+                // Calcula as porcentagens
                 _.each(list.data, function (groupId) {
                     var group = self.get(groupId),
                         aggregatePercentages = {};
-                    _.each(_.keys(sums), function (field) {
-                        var percentage = 0;
-                        if (sums[field]) {
-                            percentage = (group.aggregateValues[field] / sums[field]) * 100;
-                        }
+                    _.each(sums, function (sum, field) {
+                        var percentage = sum ? (group.aggregateValues[field] / sum) * 100 : 0;
                         aggregatePercentages[field] = percentage;
                     });
-                    var dp = self.localData[groupId];
-                    dp.aggregatePercentages = aggregatePercentages;
+                    self.localData[groupId].aggregatePercentages = aggregatePercentages;
                 });
-                return list;
             });
+
             return res;
         },
     });
