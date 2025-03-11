@@ -2,8 +2,10 @@ odoo.define("web.web_group_expand", function(require) {
     "use strict";
 
     var qweb = require("web.core").qweb;
+    var ListController = require("web.ListController");
+    var ListRenderer = require("web.ListRenderer");
 
-    require("web.ListController").include({
+    ListController.include({
         start: function () {
             this.$expandGroupButtons = $(qweb.render("web_group_expand.Buttons"));
             this.$expandGroupButtons.find("#oe_group_by_expand").on(
@@ -22,31 +24,22 @@ odoo.define("web.web_group_expand", function(require) {
         },
 
         expandAllGroups: function () {
-            // We expand layer by layer. So first we need to find the highest
-            // layer that's not already fully expanded.
             var layer = this.renderer.state.data;
             while (layer.length) {
-                var closed = layer.filter(function (group) {return !group.isOpen;});
+                var closed = this._getClosedGroups(layer);
                 if (closed.length) {
-                    // This layer is not completely expanded, expand it
                     this._toggleGroups(closed);
                     break;
                 }
-                // This layer is completely expanded, move to the next
-                layer = _.flatten(layer.map(function (group) {return group.data;}), true);
+                layer = this._getNextLayer(layer);
             }
         },
 
         collapseAllGroups: function () {
-            // We collapse layer by layer. So first we need to find the deepest
-            // layer that's not already fully collapsed.
-            var layer = this.renderer.state.data
-                .filter(function (group) {return group.isOpen;});
+            var layer = this._getOpenGroups(this.renderer.state.data);
             while (layer.length) {
-                var next = _.flatten(layer.map(function (group) {return group.data;}), true)
-                    .filter(function (group) {return group.isOpen;});
+                var next = this._getOpenGroups(this._getNextLayer(layer));
                 if (!next.length) {
-                    // Next layer is fully collapsed, so collapse this one
                     this._toggleGroups(layer);
                     break;
                 }
@@ -56,14 +49,32 @@ odoo.define("web.web_group_expand", function(require) {
 
         _toggleGroups: function (groups) {
             var self = this;
+            /**
+             * Mapeia os grupos e alterna o estado de cada grupo.
+             * 
+             * @param {Array} groups - Lista de grupos a serem alternados.
+             * @returns {Array} defs - Lista de promessas que representam a alternância de cada grupo.
+             */
             var defs = groups.map(function (group) {
                 return self.model.toggleGroup(group.id);
             });
             $.when(...defs).then(this.update.bind(this, {}, {keepSelection: true, reload: false}));
+        },
+
+        _getClosedGroups: function (layer) {
+            return layer.filter(function (group) { return !group.isOpen; });
+        },
+
+        _getOpenGroups: function (layer) {
+            return layer.filter(function (group) { return group.isOpen; });
+        },
+
+        _getNextLayer: function (layer) {
+            return _.flatten(layer.map(function (group) { return group.data; }), true);
         }
     });
 
-    require("web.ListRenderer").include({
+    ListRenderer.include({
         updateState: function () {
             var res = this._super.apply(this, arguments);
             $("nav.oe_group_by_expand_buttons").toggleClass("o_hidden", !this.isGrouped);
