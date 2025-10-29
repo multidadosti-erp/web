@@ -5,15 +5,15 @@
 odoo.define('web_widget_numeric_step.field', function (require) {
     "use strict";
 
-    var field_utils = require('web.field_utils');
-    var Registry = require('web.field_registry');
-    var FieldFloat = require('web.basic_fields').FieldFloat;
+        const field_utils = require('web.field_utils');
+        const Registry = require('web.field_registry');
+        const FieldFloat = require('web.basic_fields').FieldFloat;
 
 
     var NumericStep = FieldFloat.extend({
         template: 'web_widget_numeric_step',
         className: 'o_field_numeric_step o_field_number',
-        events: _.extend({}, _.omit(FieldFloat.prototype.events, ['change', 'input']), {
+        events: Object.assign({}, _.omit(FieldFloat.prototype.events, ['change', 'input']), {
             'mousedown .btn_numeric_step': '_onStepMouseDown',
             'touchstart .btn_numeric_step': '_onStepMouseDown',
             'click .btn_numeric_step': '_onStepClick',
@@ -21,7 +21,7 @@ odoo.define('web_widget_numeric_step.field', function (require) {
             'keydown .input_numeric_step': '_onKeyDown',
             'change .input_numeric_step': '_onChange',
             'input .input_numeric_step': '_onInput',
-            'onfocusout .widget_numeric_step': '_onFocusOut',
+            'focusout .widget_numeric_step': '_onFocusOut',
         }),
         supportedFieldTypes: ['float', 'integer'],
 
@@ -36,26 +36,19 @@ odoo.define('web_widget_numeric_step.field', function (require) {
         /**
          * @override
          */
-        init: function () {
+        init() {
             this._super.apply(this, arguments);
-
-            // Widget config
-            var max_val = this.nodeOptions.max;
-            var min_val = this.nodeOptions.min;
-            if (!_.isUndefined(min_val) && !_.isUndefined(max_val) && min_val > max_val) {
-                min_val = this.nodeOptions.max;
-                max_val = this.nodeOptions.min;
+            let { max, min, step } = this.nodeOptions;
+            if (min !== undefined && max !== undefined && min > max) {
+                [min, max] = [max, min];
             }
-
             this._config = {
-                'step': Number(this.nodeOptions.step) || 1,
-                'min': Number(min_val),
-                'max': Number(max_val),
+                step: Number(step) || 1,
+                min: Number(min),
+                max: Number(max),
             };
-
-            var self = this;
-            this._lazyOnChangeTrigger = _.debounce(function() {
-                self.$input.trigger("change");
+            this._lazyOnChangeTrigger = _.debounce(() => {
+                this.$input.trigger("change");
             }, this.DELAY_THROTTLE_CHANGE);
             this._auto_step_interval = false;
         },

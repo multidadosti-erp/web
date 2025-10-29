@@ -1,11 +1,72 @@
+
+$numeric-step-bg: #f8f9fa;
+$numeric-step-border: #ced4da;
+$numeric-step-radius: 6px;
+$numeric-step-btn-bg: #e9ecef;
+$numeric-step-btn-hover: #007bff;
+$numeric-step-btn-color: #495057;
+
 .widget_numeric_step {
     display: inline-flex;
+    align-items: center;
+    background: $numeric-step-bg;
+    border: 1px solid $numeric-step-border;
+    border-radius: $numeric-step-radius;
+    padding: 2px 8px;
+    transition: box-shadow 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    min-width: 100px;
 }
 
 .numeric_step_editing_cell {
     min-width: 120px;
-
     .input_numeric_step {
         height: auto;
+        font-size: 1rem;
+        border: none;
+        background: transparent;
+        outline: none;
+        width: 60px;
+        text-align: center;
+        transition: background 0.2s;
+        &:focus {
+            background: #fffbe6;
+        }
+    }
+}
+
+.btn_numeric_step {
+    background: $numeric-step-btn-bg;
+    border: none;
+    border-radius: 50%;
+    color: $numeric-step-btn-color;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 2px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s, color 0.2s;
+    &:hover, &:focus {
+        background: $numeric-step-btn-hover;
+        color: #fff;
+    }
+}
+
+@media (max-width: 600px) {
+    .widget_numeric_step {
+        min-width: 80px;
+        padding: 2px 4px;
+    }
+    .numeric_step_editing_cell .input_numeric_step {
+        width: 40px;
+        font-size: 0.9rem;
+    }
+    .btn_numeric_step {
+        width: 22px;
+        height: 22px;
+        font-size: 1rem;
     }
 }
