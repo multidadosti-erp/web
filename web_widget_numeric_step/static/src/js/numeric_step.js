@@ -19,10 +19,21 @@ odoo.define('web_widget_numeric_step.field', function (require) {
             'click .btn_numeric_step': '_onStepClick',
             'wheel .input_numeric_step': '_onWheel',
             'keydown .input_numeric_step': '_onKeyDown',
+            'keypress .input_numeric_step': '_onKeyPress',
             'change .input_numeric_step': '_onChange',
             'input .input_numeric_step': '_onInput',
             'focusout .widget_numeric_step': '_onFocusOut',
         }),
+        /**
+         * Bloqueia digitação de letras, permitindo apenas números, ponto e vírgula
+         */
+        _onKeyPress(ev) {
+            const char = String.fromCharCode(ev.which);
+            // Permite números, ponto, vírgula, backspace
+            if (!/[0-9.,]/.test(char) && ev.which !== 8) {
+                ev.preventDefault();
+            }
+        },
         supportedFieldTypes: ['float', 'integer'],
 
         // Values in milliseconds used for mouse down smooth speed feature
