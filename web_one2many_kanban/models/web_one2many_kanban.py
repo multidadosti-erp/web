@@ -8,39 +8,50 @@ class WebFieldData(http.Controller):
 
     @http.route(['/web/fetch_x2m_data'], type='json', auth='public')
     def get_o2x_data(self, **kwargs):
-        """ - Obtém valores dos registros contidos em um campo relacional
-        one2many, para a formatação no kanban.
-        - Quando os campos de um registro são renderizados no kanban, os campos
-        one2many carregados para o kanban, tem uma lista com os IDS dos registros
-        relacionados. Essa função obtém os valores desses objetos relacionados.
-
-        - Nota Multidados: Foi adicionado a possibilidade de deixar explícito
-            os campos a carregar dos objetos relacionados. Essa melhoria resolve
-            um importante problema de performance. No XML basta informar no atributo
-            'options' do campo relacional, informando os campos a partir da chave
-            'fields'.
-            Exemplo: <field name="line_ids" options="{'fields': ['name', 'qty', 'value']}">
-
-        Returns:
-            list: lista dos valores dos registros relacionados a partir de um
-                campo relacional 'one2many'.
+        """Melhorias de performance:
+           - Agrupa requisições por modelo e conjunto de campos solicitados, fazendo
+             uma única leitura por grupo em vez de uma por registro.
+           - Mantém a ordem dos ids no resultado e preserva comportamentos quando
+             não há campos especificados.
         """
-        o2x_records = kwargs.get('o2x_records')
-        o2x_datas = []
+        o2x_records = kwargs.get('o2x_records', []) or []
+        # Resultado final na mesma ordem de entrada
+        o2x_datas = [None] * len(o2x_records)
 
-        # Cada record são os valores do campo renderizado para QWeb
-        for record in o2x_records:
-            # Campos a ler os valores dos registros relacionados
-            o2x_fields = record.get('options', dict()).get('fields', [])
+        # Agrupar por (modelo, tuple(campos)) -> armazenar ids e referência aos registros
+        groups = {}
+        for idx, record in enumerate(o2x_records):
+            o2x_model = record.get('relation')
+            o2x_fields = tuple(record.get('options', {}).get('fields', []))
+            o2x_ids = record.get('raw_value') or []
 
-            # Tabela que o campo relacional se relaciona
-            o2x_model = record.get('relation', False)
+            if not o2x_model or not o2x_ids:
+                o2x_datas[idx] = []
+                continue
 
-            # Ids dos registros relacionados
-            o2x_ids = record.get('raw_value', False)
+            key = (o2x_model, o2x_fields)
+            entry = groups.setdefault(key, {'ids': set(), 'refs': []})
+            entry['ids'].update(o2x_ids)
+            entry['refs'].append((idx, list(o2x_ids)))
 
-            if o2x_model:
-                # Leitura dos objetos relacionados pelo campo one2many
-                o2x_obj = request.env[o2x_model]
-                o2x_datas.append(o2x_obj.search_read([('id', 'in', o2x_ids)], o2x_fields))
+        # Executar uma leitura por grupo e distribuir os resultados para cada registro
+        for (o2x_model, o2x_fields), entry in groups.items():
+            ids = list(entry['ids'])
+            o2x_obj = request.env[o2x_model]
+
+            # Se campos foram explicitamente fornecidos, ler apenas esses campos.
+            # Caso contrário, usamos search_read com lista vazia para reproduzir
+            # o comportamento original (depende da versão do Odoo).
+            if o2x_fields:
+                records_data = o2x_obj.browse(ids).read(list(o2x_fields))
+            else:
+                records_data = o2x_obj.search_read([('id', 'in', ids)], [])
+
+            # Mapear id -> dados
+            map_by_id = {rec['id']: rec for rec in records_data}
+
+            # Preencher resultados na ordem original de cada registro
+            for idx, ids_list in entry['refs']:
+                o2x_datas[idx] = [map_by_id[i] for i in ids_list if i in map_by_id]
+
         return o2x_datas
