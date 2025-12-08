@@ -9,14 +9,29 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
         _render: function () {
             var self = this;
             var def_val = $.Deferred();
-
             var o2x_field_names = [];
-            _.each(this.fieldsInfo, function (field_info, field_nm) {
-                if (field_info.mode === 'list' || field_info.mode === 'kanban')
-                {
-                    o2x_field_names.push({name: field_nm, options: field_info.options});
-                }
-            });
+            if (this.fieldsInfo && typeof this.fieldsInfo === 'object') {
+                var validModes = {list: true, kanban: true};
+                _.each(this.fieldsInfo, function (field_info, field_nm) {
+                    if (!field_info) { return; }
+                    var mode = field_info.mode;
+                    if (!validModes[mode]) { return; }
+
+                    // Normalize invisible checks and skip hidden fields
+                    var invisible = field_info.invisible;
+                    var isInvisible = (invisible === true) ||
+                                      (invisible === 1) ||
+                                      (invisible === '1') ||
+                                      (invisible === 'true');
+                    if (isInvisible) { return; }
+
+                    o2x_field_names.push({
+                        name: field_nm,
+                        options: field_info.options || {}
+                    });
+                });
+            }
+
             if ( o2x_field_names.length > 0) {
                 var o2x_records = [];
                 _.each(o2x_field_names, function (o2x_field_name) {
@@ -40,6 +55,7 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
             else {
                 def_val.resolve();
             }
+
             return def_val.then(function () {
                 self.defs = [];
                 self._replaceElement(self.qweb.render('kanban-box',
@@ -71,5 +87,4 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
             });
         },
     });
-
 });
