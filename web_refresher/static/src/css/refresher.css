@@ -1,0 +1,18 @@
+.o_cp_switch_buttons .o_cp_refresh_button {
+    margin-right: 8px;
+    border-color: #2a7f62;
+    color: #2a7f62;
+    background-color: #ffffff;
+}
+
+.o_cp_switch_buttons .o_cp_refresh_button:hover,
+.o_cp_switch_buttons .o_cp_refresh_button:focus {
+    border-color: #7bc1ab;
+    color: #1f6a55;
+    background-color: #e8f4ef;
+}
+
+.o_cp_switch_buttons .o_cp_refresh_button--loading {
+    opacity: 0.7;
+    cursor: wait;
+}
