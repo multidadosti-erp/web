@@ -40,6 +40,53 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12 col-lg-6 o_setting_box" id="feature_setting">
+                            <div class="o_setting_right_pane">
+                                <label for="pwa_enable_quick_actions" string="PWA Mobile Features"/>
+                                <span class="fa fa-lg fa-mobile"/>
+                                <div class="text-muted">
+                                    Enable or disable PWA capabilities shown in the web client
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_quick_actions" string="Quick actions panel"/>
+                                        <field name="pwa_enable_quick_actions"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_install_button" string="Install button"/>
+                                        <field name="pwa_enable_install_button"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_geolocation" string="Geolocation capture"/>
+                                        <field name="pwa_enable_geolocation"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_camera" string="Camera capture"/>
+                                        <field name="pwa_enable_camera"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_microphone" string="Microphone and speech"/>
+                                        <field name="pwa_enable_microphone"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_voice_command_prep" string="Prepare voice command intent"/>
+                                        <field name="pwa_enable_voice_command_prep"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_voice_auto_stop_seconds" string="Voice auto-stop (seconds)"/>
+                                        <field name="pwa_voice_auto_stop_seconds"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_share" string="Share API action"/>
+                                        <field name="pwa_enable_share"/>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-lg-7 o_light_label" for="pwa_enable_sw_update" string="Service worker update action"/>
+                                        <field name="pwa_enable_sw_update"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </field>

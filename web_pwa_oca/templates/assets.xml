@@ -1,22 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <template id="assets_common" name="web pwa common assets" inherit_id="web.assets_common">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/web_pwa_oca/static/src/js/install_prompt_bridge.js"></script>
+        </xpath>
+    </template>
+
     <template id="web_layout_pwa" name="Web layout PWA" inherit_id="web.webclient_bootstrap">
         <xpath expr="//t[@t-call-assets='web.assets_common']" position="before">
             <!-- Add link rel manifest -->
-            <link rel="manifest" t-attf-href="/web_pwa_oca/manifest.webmanifest"/>
+            <link
+                rel="manifest"
+                crossorigin="use-credentials"
+                t-attf-href="/web_pwa_oca/manifest.webmanifest?db=#{request.db}"
+            />
             <!-- Add iOS meta tags and icons -->
             <meta name="apple-mobile-web-app-capable" content="yes"/>
             <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
             <t t-set="pwa_name" t-value="request.env['ir.config_parameter'].sudo().get_param('pwa.manifest.name')"/>
             <meta name="apple-mobile-web-app-title" t-att-content="pwa_name"/>
-            <link rel="apple-touch-icon" href="/web_pwa_oca/static/img/icons/icon-152x152.png"/>
+            <t t-set="pwa_apple_icon" t-value="request.env['ir.attachment'].sudo().search([('url', '=', '/web_pwa_oca/icon152x152.png')], limit=1)"/>
+            <t t-set="pwa_favicon_icon" t-value="request.env['ir.attachment'].sudo().search([('url', 'like', '/web_pwa_oca/icon.')], limit=1)"/>
+            <t t-set="pwa_icon_version" t-value="request.env['ir.config_parameter'].sudo().get_param('pwa.icon.version', '1')"/>
+            <link rel="apple-touch-icon" t-att-href="'%s?v=%s' % ((pwa_apple_icon.url if pwa_apple_icon else '/web_pwa_oca/static/img/icons/icon-152x152.png'), pwa_icon_version)"/>
+            <link rel="icon" type="image/png" t-att-href="'%s?v=%s' % ((pwa_favicon_icon.url if pwa_favicon_icon else '/web_pwa_oca/static/img/icons/icon-192x192.png'), pwa_icon_version)"/>
             <!-- Add meta theme-color -->
             <t t-set="pwa_theme_color" t-value="request.env['ir.config_parameter'].sudo().get_param('pwa.manifest.theme_color')"/>
             <meta name="theme-color" t-att-content="pwa_theme_color" />
+            <meta name="pwa-feature-quick-actions" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.quick_actions', 'True')"/>
+            <meta name="pwa-feature-install-button" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.install_button', 'True')"/>
+            <meta name="pwa-feature-geolocation" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.geolocation', 'True')"/>
+            <meta name="pwa-feature-camera" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.camera', 'True')"/>
+            <meta name="pwa-feature-microphone" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.microphone', 'True')"/>
+            <meta name="pwa-feature-voice-command-prep" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.voice_command_prep', 'False')"/>
+            <meta name="pwa-feature-voice-auto-stop-seconds" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.voice_auto_stop_seconds', '5')"/>
+            <meta name="pwa-feature-share" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.share', 'True')"/>
+            <meta name="pwa-feature-sw-update" t-att-content="request.env['ir.config_parameter'].sudo().get_param('pwa.features.sw_update', 'True')"/>
         </xpath>
     </template>
     <template id="assets_backend" name="web service worker assets" inherit_id="web.assets_backend">
         <xpath expr="." position="inside">
+            <link rel="stylesheet" type="text/scss" href="/web_pwa_oca/static/src/scss/pwa_manager.scss"/>
             <script type="text/javascript" src="/web_pwa_oca/static/src/js/pwa_manager.js"></script>
             <script type="text/javascript" src="/web_pwa_oca/static/src/js/webclient.js"></script>
         </xpath>

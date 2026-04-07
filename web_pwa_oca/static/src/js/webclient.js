@@ -13,8 +13,12 @@ odoo.define("web_pwa_oca.webclient", function (require) {
          * @override
          */
         show_application: function () {
-            this.pwa_manager = new PWAManager(this);
-            return this._super.apply(this, arguments);
+            var result = this._super.apply(this, arguments);
+            if (!this.pwa_manager) {
+                this.pwa_manager = new PWAManager(this);
+            }
+            this.pwa_manager.activate();
+            return result;
         },
     });
 });

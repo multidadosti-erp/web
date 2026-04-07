@@ -6,7 +6,7 @@
 {
     "name": "Progressive web application",
     "summary": "Make Odoo a PWA",
-    "version": "12.0.3.2.0",
+    "version": "12.0.3.9.0",
     "development_status": "Beta",
     "category": "Website",
     "website": "https://github.com/OCA/web",
@@ -20,8 +20,10 @@
         'mail',
     ],
     "data": [
+        "security/ir.model.access.csv",
         "templates/assets.xml",
         "views/res_config_settings_views.xml",
+        "views/web_pwa_mobile_log_views.xml",
     ],
     'images': ['static/description/pwa.png'],
 }

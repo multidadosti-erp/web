@@ -24,6 +24,15 @@ class ResConfigSettings(models.TransientModel):
     pwa_icon = fields.Binary("Icon", readonly=False)
     pwa_background_color = fields.Char("Background Color")
     pwa_theme_color = fields.Char("Theme Color")
+    pwa_enable_quick_actions = fields.Boolean("Enable PWA Quick Actions")
+    pwa_enable_install_button = fields.Boolean("Enable Install Button")
+    pwa_enable_geolocation = fields.Boolean("Enable Geolocation")
+    pwa_enable_camera = fields.Boolean("Enable Camera")
+    pwa_enable_microphone = fields.Boolean("Enable Microphone")
+    pwa_enable_voice_command_prep = fields.Boolean("Prepare Voice Commands")
+    pwa_voice_auto_stop_seconds = fields.Integer("Voice Auto-stop (seconds)")
+    pwa_enable_share = fields.Boolean("Enable Share")
+    pwa_enable_sw_update = fields.Boolean("Enable Service Worker Update")
 
     @api.model
     def get_values(self):
@@ -53,6 +62,43 @@ class ResConfigSettings(models.TransientModel):
             config_parameter_obj_sudo.get_param(
                 "pwa.manifest.theme_color", default="#2E69B5")
         )
+        res["pwa_enable_quick_actions"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.quick_actions", default="True") == "True"
+        )
+        res["pwa_enable_install_button"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.install_button", default="True") == "True"
+        )
+        res["pwa_enable_geolocation"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.geolocation", default="True") == "True"
+        )
+        res["pwa_enable_camera"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.camera", default="True") == "True"
+        )
+        res["pwa_enable_microphone"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.microphone", default="True") == "True"
+        )
+        res["pwa_enable_voice_command_prep"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.voice_command_prep", default="False") == "True"
+        )
+        res["pwa_voice_auto_stop_seconds"] = int(
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.voice_auto_stop_seconds", default="5"
+            )
+        )
+        res["pwa_enable_share"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.share", default="True") == "True"
+        )
+        res["pwa_enable_sw_update"] = (
+            config_parameter_obj_sudo.get_param(
+                "pwa.features.sw_update", default="True") == "True"
+        )
         return res
 
     def _unpack_icon(self, icon):
@@ -61,9 +107,31 @@ class ResConfigSettings(models.TransientModel):
         icon_bytes = io.BytesIO(decoded_icon)
         return Image.open(icon_bytes)
 
-    def _write_icon_to_attachment(self, extension, mimetype, size=None):
+    def _normalize_png_icon(self, icon):
+        image = self._unpack_icon(icon)
+        width, height = image.size
+        if width >= 512 and height >= 512:
+            return icon
+
+        # Keep original pixels and center the icon in a transparent square canvas.
+        side = max(512, width, height)
+        canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+        x = int((side - width) / 2)
+        y = int((side - height) / 2)
+        canvas.paste(image.convert("RGBA"), (x, y))
+
+        output = io.BytesIO()
+        canvas.save(output, format="PNG")
+        return base64.b64encode(output.getvalue())
+
+    def _touch_icon_version(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "pwa.icon.version", fields.Datetime.now()
+        )
+
+    def _write_icon_to_attachment(self, extension, mimetype, size=None, icon_data=None):
         url = self._pwa_icon_url_base + extension
-        icon = self.pwa_icon
+        icon = icon_data or self.pwa_icon
         # Resize image
         if size:
             image = self._unpack_icon(icon)
@@ -112,6 +180,35 @@ class ResConfigSettings(models.TransientModel):
         config_parameter_obj_sudo.set_param(
             "pwa.manifest.theme_color", self.pwa_theme_color
         )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.quick_actions", str(bool(self.pwa_enable_quick_actions))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.install_button", str(bool(self.pwa_enable_install_button))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.geolocation", str(bool(self.pwa_enable_geolocation))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.camera", str(bool(self.pwa_enable_camera))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.microphone", str(bool(self.pwa_enable_microphone))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.voice_command_prep",
+            str(bool(self.pwa_enable_voice_command_prep)),
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.voice_auto_stop_seconds",
+            str(max(1, self.pwa_voice_auto_stop_seconds or 5)),
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.share", str(bool(self.pwa_enable_share))
+        )
+        config_parameter_obj_sudo.set_param(
+            "pwa.features.sw_update", str(bool(self.pwa_enable_sw_update))
+        )
         # Retrieve previous value for pwa_icon from ir_attachment
         pwa_icon_ir_attachments = (
             self.env["ir.attachment"]
@@ -122,6 +219,7 @@ class ResConfigSettings(models.TransientModel):
         if not self.pwa_icon:
             if pwa_icon_ir_attachments:
                 pwa_icon_ir_attachments.unlink()
+                self._touch_icon_version()
             return res
         # Fail if icon provided is larger than 2mb
         if sys.getsizeof(self.pwa_icon) > 2196608:
@@ -141,14 +239,18 @@ class ResConfigSettings(models.TransientModel):
         # Delete all previous records if we are writting new ones
         if pwa_icon_ir_attachments:
             pwa_icon_ir_attachments.unlink()
-        self._write_icon_to_attachment(pwa_icon_extension, pwa_icon_mimetype)
+        icon_payload = self.pwa_icon
+        if pwa_icon_extension == ".png":
+            icon_payload = self._normalize_png_icon(icon_payload)
+
+        self._write_icon_to_attachment(
+            pwa_icon_extension,
+            pwa_icon_mimetype,
+            icon_data=icon_payload,
+        )
+        self._touch_icon_version()
         # write multiple sizes if not SVG
         if pwa_icon_extension != ".svg":
-            # Fail if provided PNG is smaller than 512x512
-            if self._unpack_icon(self.pwa_icon).size < (512, 512):
-                raise exceptions.UserError(
-                    _("You can only upload PNG files bigger than 512x512")
-                )
             for size in [
                 (128, 128),
                 (144, 144),
@@ -158,5 +260,8 @@ class ResConfigSettings(models.TransientModel):
                 (512, 512),
             ]:
                 self._write_icon_to_attachment(
-                    pwa_icon_extension, pwa_icon_mimetype, size=size
+                    pwa_icon_extension,
+                    pwa_icon_mimetype,
+                    size=size,
+                    icon_data=icon_payload,
                 )

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_web_pwa_mobile_log_tree" model="ir.ui.view">
+        <field name="name">web.pwa.mobile.log.tree</field>
+        <field name="model">web.pwa.mobile.log</field>
+        <field name="arch" type="xml">
+            <tree string="PWA Mobile Logs" create="false">
+                <field name="captured_at"/>
+                <field name="user_id"/>
+                <field name="event_type"/>
+                <field name="city"/>
+                <field name="state"/>
+                <field name="latitude"/>
+                <field name="longitude"/>
+                <field name="accuracy"/>
+                <field name="image_mimetype"/>
+                <field name="transcript"/>
+                <field name="command_intent"/>
+                <field name="command_status"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_web_pwa_mobile_log_form" model="ir.ui.view">
+        <field name="name">web.pwa.mobile.log.form</field>
+        <field name="model">web.pwa.mobile.log</field>
+        <field name="arch" type="xml">
+            <form string="PWA Mobile Log" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="captured_at"/>
+                        <field name="user_id"/>
+                        <field name="event_type"/>
+                        <field name="user_agent"/>
+                        <field name="note"/>
+                    </group>
+                    <group string="Geolocation">
+                        <field name="latitude"/>
+                        <field name="longitude"/>
+                        <field name="accuracy"/>
+                        <field name="country"/>
+                        <field name="state"/>
+                        <field name="city"/>
+                        <field name="suburb"/>
+                        <field name="road"/>
+                        <field name="postcode"/>
+                        <field name="display_name"/>
+                    </group>
+                    <group string="Camera">
+                        <field name="image_mimetype"/>
+                        <field name="image" widget="image" class="oe_avatar"/>
+                    </group>
+                    <group string="Microphone">
+                        <field name="transcript_lang"/>
+                        <field name="transcript"/>
+                        <field name="command_intent"/>
+                        <field name="command_confidence"/>
+                        <field name="command_status"/>
+                        <field name="command_payload"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_web_pwa_mobile_log" model="ir.actions.act_window">
+        <field name="name">PWA Mobile Logs</field>
+        <field name="res_model">web.pwa.mobile.log</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem
+        id="menu_web_pwa_mobile_log"
+        name="PWA Mobile Logs"
+        parent="base.menu_administration"
+        action="action_web_pwa_mobile_log"
+        sequence="150"
+        groups="base.group_system"
+    />
+</odoo>
