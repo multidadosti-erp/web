@@ -291,7 +291,8 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                 self._applyPanelVisibility();
             });
 
-            $systray.prepend($item);
+            // Append at the end to avoid reordering existing systray buttons.
+            $systray.append($item);
             this._systray_retry_count = 0;
         },
 
