@@ -91,7 +91,7 @@ class PWA(Controller):
             ]
         return icons
 
-    def _get_pwa_manifest(self):
+    def _get_pwa_manifest(self, db_name=None):
         """Webapp manifest"""
         config_param_sudo = request.env["ir.config_parameter"].sudo()
         pwa_name = config_param_sudo.get_param("pwa.manifest.name", "Odoo PWA")
@@ -108,14 +108,20 @@ class PWA(Controller):
         )
         theme_color = config_param_sudo.get_param("pwa.manifest.theme_color", "#2E69B5")
         icon_version = config_param_sudo.get_param("pwa.icon.version", "1")
+        db_value = db_name or request.db or request.session.db
+        start_url = "/web"
+        manifest_id = "/web"
+        if db_value:
+            start_url = "/web?db=%s" % db_value
+            manifest_id = start_url
         return {
             "name": pwa_name,
             "short_name": pwa_short_name,
             "description": pwa_name,
             "lang": "pt-BR",
             "icons": self._get_pwa_manifest_icons(pwa_icon, icon_version),
-            "id": "/web",
-            "start_url": "/web",
+            "id": manifest_id,
+            "start_url": start_url,
             "scope": "/web",
             "display": "standalone",
             "display_override": ["standalone", "minimal-ui"],
@@ -128,9 +134,14 @@ class PWA(Controller):
     @route("/web_pwa_oca/manifest.webmanifest", type="http", auth="public")
     def pwa_manifest(self, **kwargs):
         """Returns the manifest used to install the page as app"""
+        db_name = kwargs.get("db") or request.db or request.session.db
         return request.make_response(
-            json.dumps(self._get_pwa_manifest()),
-            headers=[("Content-Type", "application/manifest+json;charset=utf-8")],
+            json.dumps(self._get_pwa_manifest(db_name=db_name)),
+            headers=[
+                ("Content-Type", "application/manifest+json;charset=utf-8"),
+                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                ("Pragma", "no-cache"),
+            ],
         )
 
     @route(
