@@ -112,8 +112,7 @@ class PWA(Controller):
         start_url = "/web"
         manifest_id = "/web"
         if db_value:
-            start_url = "/web?db=%s" % db_value
-            manifest_id = start_url
+            manifest_id = "/web?db=%s" % db_value
         return {
             "name": pwa_name,
             "short_name": pwa_short_name,

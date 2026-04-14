@@ -43,6 +43,10 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             this._speech_manual_stop = false;
             this._speech_auto_stopped = false;
             this._speech_auto_stop_seconds = this._getIntMetaValue("pwa-feature-voice-auto-stop-seconds", 5);
+            this._speech_initial_wait_seconds = Math.max(12, this._speech_auto_stop_seconds * 3);
+            this._speech_received_any_result = false;
+            this._speech_retry_count = 0;
+            this._speech_max_retries = 2;
             this._is_ios = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
             this._is_standalone_ios = window.navigator.standalone === true;
             this._is_standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -459,17 +463,26 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             }
 
             if (browserLabel === "Firefox") {
-                this._setStatus(_t("Firefox possui suporte limitado para instalacao PWA no desktop."));
-                steps.push(_t("No Firefox desktop a instalacao PWA pode nao estar disponivel."));
-                steps.push(_t("Para instalar como app no notebook/tablet, prefira Chrome ou Edge."));
-                steps.push(_t("Alternativa: criar atalho do site no sistema operacional."));
+                this._setStatus(_t("Firefox desktop nao suporta instalacao de PWA como app independente."));
+                steps.push(_t("Firefox desktop removeu o suporte a instalacao PWA em 2021 e nao o re-adicionou."));
+                steps.push(_t("O Service Worker funciona normalmente, mas o app nao pode ser instalado pelo Firefox."));
+                steps.push(_t("Para instalar como app: use Chrome, Edge ou Opera (eles suportam instalacao PWA no desktop)."));
+                steps.push(_t("No Android: Firefox para Android suporta instalacao PWA pelo menu do navegador."));
+                steps.push(_t("Alternativa no desktop: arraste a URL para a area de trabalho para criar um atalho de site."));
                 this._showInstallDialog(browserLabel, steps);
                 return;
             }
 
             if (browserLabel === "Opera") {
-                steps.push(_t("No Opera, abra o menu e procure 'Instalar app' ou opcao equivalente."));
-                steps.push(_t("Se nao aparecer, teste Chrome/Edge (maior compatibilidade de instalacao)."));
+                this._setStatus(_t("No Opera, o app pode ser instalado pelo icone na barra de enderecos."));
+                steps.push(_t("Olhe na barra de enderecos (direita): procure um icone de monitor/tela com um '+' ou seta para baixo."));
+                steps.push(_t("Clique nesse icone e selecione 'Instalar' para adicionar o app."));
+                steps.push(_t("Alternativa: clique no menu do Opera (letra O no canto) e procure 'Instalar [nome do app]' ou 'Sites' > 'Instalar'."));
+                steps.push(_t("Para verificar se ja esta instalado, acesse opera://apps na barra de enderecos."));
+                steps.push(_t("Se o icone nao aparecer, recarregue a pagina (F5) e aguarde alguns segundos navegando no site."));
+                steps.push(_t("Caso nenhuma opcao funcione, use Chrome ou Edge para instalar com maior compatibilidade."));
+                this._showInstallDialog(browserLabel, steps);
+                return;
             }
 
             this._setStatus(
@@ -521,8 +534,7 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             var swState = this._sw_registration ? _t("registrado") : _t("nao registrado");
             var modeState = (this._is_standalone || this._is_standalone_ios) ? _t("instalado") : _t("browser");
             var report = this._getInstallabilityReport(browserLabel);
-            var recommendation = report.score >= 80 ? _t("Pronto para instalar") :
-                (report.score >= 50 ? _t("Parcialmente pronto") : _t("Nao pronto para instalar"));
+            var recommendation = report.recommendation;
             var html = [
                 '<div class="o_pwa_install_help">',
                 '<p><strong>' + _t("Score de instalabilidade") + '</strong>: ' + report.score + '/100 (' + recommendation + ')</p>',
@@ -571,7 +583,7 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                             });
                         },
                     },
-                    {
+                    !report.blocked && {
                         text: _t("Tentar instalar agora"),
                         classes: "btn-primary",
                         close: true,
@@ -684,8 +696,8 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             var canPrompt = Boolean(this._deferred_install_prompt);
             addItem(_t("Prompt nativo"), canPrompt ? "ok" : "warn", canPrompt ? _t("disponivel") : _t("indisponivel"), 10);
 
-            var browserInstallability = browserLabel === "Firefox" ? "warn" : "ok";
-            var browserHint = browserLabel === "Firefox" ? _t("limitado no desktop") : _t("compativel");
+            var browserInstallability = browserLabel === "Firefox" ? "fail" : "ok";
+            var browserHint = browserLabel === "Firefox" ? _t("nao suporta PWA no desktop") : _t("compativel");
             addItem(_t("Compatibilidade do navegador"), browserInstallability, browserHint, 10);
 
             var totalWeight = items.reduce(function (acc, item) {
@@ -702,9 +714,24 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             }, 0);
             var score = totalWeight ? Math.round((earnedWeight / totalWeight) * 100) : 0;
 
+            // Hard blocker: browser does not support PWA installation at all.
+            var hardBlocked = browserInstallability === "fail";
+            var recommendation;
+            if (hardBlocked) {
+                recommendation = _t("Nao instalavel neste navegador");
+            } else if (score >= 80) {
+                recommendation = _t("Pronto para instalar");
+            } else if (score >= 50) {
+                recommendation = _t("Parcialmente pronto");
+            } else {
+                recommendation = _t("Nao pronto para instalar");
+            }
+
             return {
                 score: score,
                 items: items,
+                blocked: hardBlocked,
+                recommendation: recommendation,
             };
         },
 
@@ -880,6 +907,7 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                 this._speech_manual_stop = true;
                 this._speech_auto_stopped = false;
                 this._speech_is_listening = false;
+                this._speech_retry_count = 0;
                 this._clearSpeechAutoStopTimer();
                 this._clearPendingSpeechStartTimer();
                 this._setMicButtonActive(false);
@@ -923,6 +951,8 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                         }
                     }
 
+                    self._speech_received_any_result = true;
+
                     if (partialTranscript.trim()) {
                         self._speech_partial_buffer = partialTranscript.trim();
                         self._setStatus(_t("Microfone ouvindo...") + " " + self._speech_partial_buffer);
@@ -944,10 +974,13 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                     self._clearPendingSpeechStartTimer();
                     self._clearManualStopFallbackTimer();
                     self._setMicButtonActive(false);
+                    self._speech_retry_count = 0;
                     if (self._speech_manual_stop && event && event.error === "aborted") {
                         self._finalizeManualStop(recognition.lang);
                         return;
                     }
+                    // Descarta a instancia com erro para forcar criacao nova na proxima tentativa.
+                    self._speech_recognition = null;
                     self._setStatus(_t("Falha no reconhecimento de voz:") + " " + (event.error || "unknown"));
                 };
 
@@ -962,7 +995,25 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                         return;
                     } else if (self._speech_auto_stopped) {
                         self._speech_auto_stopped = false;
-                        self._setStatus(_t("Microfone parado por tempo."));
+                        if (!self._speech_received_any_result) {
+                            if (self._speech_retry_count < self._speech_max_retries) {
+                                self._speech_retry_count += 1;
+                                self._setStatus(
+                                    _t("Sem deteccao de fala. Tentando novamente") +
+                                    " (" + self._speech_retry_count + "/" + self._speech_max_retries + ")"
+                                );
+                                self._speech_buffer = "";
+                                self._speech_partial_buffer = "";
+                                self._speech_pending_start_timer = setTimeout(function () {
+                                    self._startRecognitionInstance(recognition);
+                                }, 300);
+                                return;
+                            }
+                            self._setStatus(_t("Sem deteccao de fala inicial. Verifique permissao de microfone e tente novamente."));
+                        } else {
+                            self._speech_retry_count = 0;
+                            self._setStatus(_t("Microfone parado por tempo."));
+                        }
                     }
                     self._flushSpeechBuffer(recognition.lang);
                 };
@@ -970,18 +1021,11 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                 this._speech_recognition = recognition;
             }
 
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-                    stream.getTracks().forEach(function (track) {
-                        track.stop();
-                    });
-                    self._startRecognitionInstance(recognition);
-                }, function (error) {
-                    self._setStatus(_t("Falha ao acessar microfone:") + " " + error.message);
-                });
-                return;
-            }
-
+            // Inicia diretamente sem getUserMedia pre-check.
+            // O pre-check com getUserMedia+stop causava race condition no Windows:
+            // o OS nao libera o dispositivo de audio a tempo e o SpeechRecognition
+            // iniciava com stream corrompido, gerando "No speech detected".
+            // A propria API SpeechRecognition gerencia a permissao de microfone.
             self._startRecognitionInstance(recognition);
         },
 
@@ -1005,9 +1049,10 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                 this._speech_is_listening = true;
                 this._speech_manual_stop = false;
                 this._speech_auto_stopped = false;
-                this._resetSpeechAutoStopTimer();
+                this._speech_received_any_result = false;
+                this._resetSpeechAutoStopTimer(this._speech_initial_wait_seconds);
                 this._setMicButtonActive(true);
-                this._setStatus(_t("Microfone ativo. Fale agora... Auto-parada em") + " " + this._speech_auto_stop_seconds + "s");
+                this._setStatus(_t("Microfone ativo. Fale agora... Aguardando fala inicial por") + " " + this._speech_initial_wait_seconds + "s");
             } catch (error) {
                 // Some engines throw if start is called too quickly after stop.
                 if (error && error.name === "InvalidStateError") {
@@ -1022,9 +1067,10 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                             self._speech_is_listening = true;
                             self._speech_manual_stop = false;
                             self._speech_auto_stopped = false;
-                            self._resetSpeechAutoStopTimer();
+                            self._speech_received_any_result = false;
+                            self._resetSpeechAutoStopTimer(self._speech_initial_wait_seconds);
                             self._setMicButtonActive(true);
-                            self._setStatus(_t("Microfone ativo. Fale agora... Auto-parada em") + " " + self._speech_auto_stop_seconds + "s");
+                            self._setStatus(_t("Microfone ativo. Fale agora... Aguardando fala inicial por") + " " + self._speech_initial_wait_seconds + "s");
                         } catch (retryError) {
                             self._setStatus(_t("Nao foi possivel iniciar o microfone agora."));
                         }
@@ -1039,16 +1085,17 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
          *
          * @private
          */
-        _resetSpeechAutoStopTimer: function () {
+        _resetSpeechAutoStopTimer: function (seconds) {
             var self = this;
             this._clearSpeechAutoStopTimer();
+            var timeoutSeconds = seconds || this._speech_auto_stop_seconds;
             this._speech_auto_stop_timer = setTimeout(function () {
                 if (self._speech_recognition && self._speech_is_listening) {
                     self._speech_auto_stopped = true;
                     self._setStatus(_t("Auto-parada do microfone por tempo."));
                     self._speech_recognition.stop();
                 }
-            }, this._speech_auto_stop_seconds * 1000);
+            }, timeoutSeconds * 1000);
         },
 
         /**
@@ -1137,6 +1184,7 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             }
             this._speech_buffer = "";
             this._speech_partial_buffer = "";
+            this._speech_retry_count = 0;
 
             if (!transcript) {
                 this._saveMicrophoneLog(null, lang || "pt-BR", _t("No speech detected before stop"), null);
