@@ -65,20 +65,30 @@ odoo.define('web_group_by_percentage', function (require) {
 
             res.done(function (list) {
                 // Calcula os totais
-                var sums = _.reduce(list.data, function (acc, groupId) {
-                    var group = self.get(groupId);
-                    _.each(group.aggregateValues, function (value, field) {
-                        acc[field] = (acc[field] || 0) + value;
+                var sums = _.reduce(list.data || [], function (acc, groupId) {
+                    if (!groupId) {
+                        return acc;
+                    }
+                    var group = self.get(groupId) || {};
+                    var aggregateValues = group.aggregateValues || {};
+                    _.each(aggregateValues, function (value, field) {
+                        var numericValue = parseFloat(value) || 0;
+                        acc[field] = (acc[field] || 0) + numericValue;
                     });
                     return acc;
                 }, {});
 
                 // Calcula as porcentagens
-                _.each(list.data, function (groupId) {
-                    var group = self.get(groupId),
+                _.each(list.data || [], function (groupId) {
+                    if (!groupId || !self.localData[groupId]) {
+                        return;
+                    }
+                    var group = self.get(groupId) || {},
+                        aggregateValues = group.aggregateValues || {},
                         aggregatePercentages = {};
                     _.each(sums, function (sum, field) {
-                        var percentage = sum ? (group.aggregateValues[field] / sum) * 100 : 0;
+                        var groupValue = parseFloat(aggregateValues[field]) || 0;
+                        var percentage = sum ? (groupValue / sum) * 100 : 0;
                         aggregatePercentages[field] = percentage;
                     });
                     self.localData[groupId].aggregatePercentages = aggregatePercentages;
