@@ -26,6 +26,7 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             this._$status = null;
             this._$network = null;
             this._$nav_toggle_btn = null;
+            this._$nav_open_browser_btn = null;
             this._$geo_btn = null;
             this._$camera_btn = null;
             this._$mic_btn = null;
@@ -264,8 +265,17 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
         _ensureNavbarToggle: function () {
             var self = this;
             var $existing = $("#o_pwa_systray_toggle");
+            var $existingBrowser = $("#o_pwa_systray_open_browser");
+
             if ($existing.length) {
                 this._$nav_toggle_btn = $existing;
+            }
+            if ($existingBrowser.length) {
+                this._$nav_open_browser_btn = $existingBrowser;
+                this._$nav_open_browser_btn.off("click").on("click", this._onOpenInBrowserClick.bind(this));
+            }
+
+            if ($existing.length && (this._$nav_open_browser_btn || !(this._is_standalone || this._is_standalone_ios))) {
                 return;
             }
 
@@ -277,6 +287,25 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
                         self._ensureNavbarToggle();
                     }, 300);
                 }
+                return;
+            }
+
+            if ((this._is_standalone || this._is_standalone_ios) && !this._$nav_open_browser_btn) {
+                var $browserItem = $([
+                    '<li class="o_pwa_systray_item">',
+                    '  <a href="#" id="o_pwa_systray_open_browser" title="' + _t("Abrir no navegador") + '">',
+                    '    <i class="fa fa-external-link"></i>',
+                    '  </a>',
+                    '</li>',
+                ].join(""));
+
+                this._$nav_open_browser_btn = $browserItem.find("#o_pwa_systray_open_browser");
+                this._$nav_open_browser_btn.on("click", this._onOpenInBrowserClick.bind(this));
+                $systray.append($browserItem);
+            }
+
+            if ($existing.length) {
+                this._systray_retry_count = 0;
                 return;
             }
 
@@ -298,6 +327,28 @@ odoo.define("web_pwa_oca.PWAManager", function (require) {
             // Append at the end to avoid reordering existing systray buttons.
             $systray.append($item);
             this._systray_retry_count = 0;
+        },
+
+        /**
+         * Opens current route in a regular browser tab to recover tabbed workflow.
+         *
+         * @private
+         */
+        _onOpenInBrowserClick: function (ev) {
+            ev.preventDefault();
+
+            var search = window.location.search || "";
+            var hash = window.location.hash || "";
+            var nextUrl = "/web" + search + hash;
+            var browserUrl = window.location.origin + "/web_pwa_oca/open_in_browser?next=" + encodeURIComponent(nextUrl);
+            var newTab = window.open(browserUrl, "_blank");
+
+            if (newTab) {
+                this._setStatus(_t("Tela aberta no navegador."));
+                return;
+            }
+
+            this._setStatus(_t("Nao foi possivel abrir nova aba. Verifique bloqueio de pop-up."));
         },
 
         /**

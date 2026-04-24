@@ -66,6 +66,12 @@ class ServiceWorker(PWA):
     def _get_js_pwa_core_event_fetch_impl(self):
         return ""
 
+    def _get_js_pwa_core_event_fetch(self):
+        fetch_impl = self._get_js_pwa_core_event_fetch_impl()
+        if not fetch_impl or not fetch_impl.strip():
+            return ""
+        return self.JS_PWA_CORE_EVENT_FETCH.format(fetch_impl)
+
     @route("/service-worker.js", type="http", auth="public")
     def render_service_worker(self):
         """Route to register the service worker in the 'main' scope ('/')"""
@@ -78,8 +84,7 @@ class ServiceWorker(PWA):
                 self._get_js_pwa_core_event_install_impl()),
             'pwa_core_event_activate': self.JS_PWA_CORE_EVENT_ACTIVATE.format(
                 self._get_js_pwa_core_event_activate_impl()),
-            'pwa_core_event_fetch': self.JS_PWA_CORE_EVENT_FETCH.format(
-                self._get_js_pwa_core_event_fetch_impl()),
+            'pwa_core_event_fetch': self._get_js_pwa_core_event_fetch(),
         })
         return request.make_response(
             sw_code,

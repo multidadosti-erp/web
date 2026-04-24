@@ -4,6 +4,8 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 import json
 import base64
+from urllib.parse import unquote
+from werkzeug.utils import redirect
 
 from odoo.http import request, Controller, route
 
@@ -226,3 +228,11 @@ class PWA(Controller):
 
         rec = request.env["web.pwa.mobile.log"].sudo().create(vals)
         return {"ok": True, "id": rec.id}
+
+    @route("/web_pwa_oca/open_in_browser", type="http", auth="user")
+    def pwa_open_in_browser(self, next=None, **kwargs):
+        """Bridge route outside /web scope to open current screen in browser mode."""
+        target = unquote(next) if next else "/web"
+        if not isinstance(target, str) or not target.startswith("/web"):
+            target = "/web"
+        return redirect(target, code=302)

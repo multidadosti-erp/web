@@ -15,7 +15,7 @@
                 t-attf-href="/web_pwa_oca/manifest.webmanifest?db=#{request.db}"
             />
             <!-- Add iOS meta tags and icons -->
-            <meta name="apple-mobile-web-app-capable" content="yes"/>
+            <meta name="mobile-web-app-capable" content="yes"/>
             <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
             <t t-set="pwa_name" t-value="request.env['ir.config_parameter'].sudo().get_param('pwa.manifest.name')"/>
             <meta name="apple-mobile-web-app-title" t-att-content="pwa_name"/>
