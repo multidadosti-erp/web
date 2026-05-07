@@ -83,7 +83,13 @@ odoo.define('web_one2many_kanban.web_one2many_kanban', function (require) {
                 // We use boostrap tooltips for better and faster display
                 self.$('span.o_tag').tooltip({delay: {'show': 50}});
 
-                return $.when.apply(self, self.defs);
+                var defsPromise = $.when.apply(self, self.defs);
+                defsPromise.done(function () {
+                    if (self._renderKanbanCharts) {
+                        self._renderKanbanCharts();
+                    }
+                });
+                return defsPromise;
             });
         },
     });
